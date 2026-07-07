@@ -276,6 +276,83 @@ footer .dev { color: var(--green); font-weight: 600; }
 .watermark b { color: var(--green); font-weight: 600; }
 @media (max-width: 860px) { .watermark { font-size: .6rem; padding: .25rem .7rem; } }
 
+/* ---------- chatbot ---------- */
+#chat-fab {
+  position: fixed; bottom: 18px; left: 18px; z-index: 70;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--bg-raised); border: 1px solid var(--line-bright);
+  font-size: 1.45rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 8px 24px -8px rgba(0,0,0,.8), 0 0 0 0 rgba(61,220,132,.4);
+  transition: transform .2s, border-color .2s;
+  animation: fabpulse 3s ease-out infinite;
+}
+#chat-fab:hover { transform: scale(1.08); border-color: var(--green); }
+@keyframes fabpulse {
+  0% { box-shadow: 0 8px 24px -8px rgba(0,0,0,.8), 0 0 0 0 rgba(61,220,132,.35); }
+  60% { box-shadow: 0 8px 24px -8px rgba(0,0,0,.8), 0 0 0 14px rgba(61,220,132,0); }
+  100% { box-shadow: 0 8px 24px -8px rgba(0,0,0,.8), 0 0 0 0 rgba(61,220,132,0); }
+}
+#chat-panel {
+  position: fixed; bottom: 84px; left: 18px; z-index: 70;
+  width: 350px; max-width: calc(100vw - 36px); height: 460px; max-height: calc(100vh - 120px);
+  background: #0c111b; border: 1px solid var(--line-bright); border-radius: 14px;
+  display: none; flex-direction: column; overflow: hidden;
+  box-shadow: 0 24px 60px -12px rgba(0,0,0,.85), 0 0 0 1px rgba(61,220,132,.08);
+  opacity: 0; transform: translateY(14px) scale(.98);
+  transition: opacity .22s ease, transform .22s ease;
+}
+#chat-panel.open { display: flex; }
+#chat-panel.shown { opacity: 1; transform: none; }
+#chat-panel .head {
+  display: flex; align-items: center; gap: .55rem;
+  padding: .7rem .95rem; background: var(--bg-raised); border-bottom: 1px solid var(--line);
+  font-family: var(--mono); font-size: .78rem; color: var(--text-bright);
+}
+#chat-panel .head .status { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); }
+#chat-panel .head .x {
+  margin-left: auto; background: none; border: none; color: var(--text-dim);
+  font-size: 1rem; cursor: pointer; padding: .2rem .4rem;
+}
+#chat-panel .head .x:hover { color: var(--text-bright); }
+#chat-log { flex: 1; overflow-y: auto; padding: .9rem; display: flex; flex-direction: column; gap: .55rem; }
+.msg {
+  max-width: 86%; padding: .55rem .8rem; border-radius: 10px;
+  font-size: .82rem; line-height: 1.55;
+  animation: msgin .28s ease both;
+}
+.msg.bot { background: var(--bg-card); border: 1px solid var(--line); align-self: flex-start; border-bottom-left-radius: 3px; }
+.msg.user { background: var(--green-dim); border: 1px solid rgba(61,220,132,.3); color: var(--text-bright); align-self: flex-end; border-bottom-right-radius: 3px; }
+.msg.bot b { color: var(--green); }
+.msg.bot a { font-size: .78rem; }
+.msg.bot code { font-size: .76rem; }
+@keyframes msgin { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.msg.typing { display: flex; gap: 4px; padding: .7rem .8rem; }
+.msg.typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--text-dim); animation: tdot 1s infinite; }
+.msg.typing i:nth-child(2) { animation-delay: .18s; }
+.msg.typing i:nth-child(3) { animation-delay: .36s; }
+@keyframes tdot { 0%, 60%, 100% { opacity: .3; transform: none; } 30% { opacity: 1; transform: translateY(-4px); } }
+#chat-chips { display: flex; flex-wrap: wrap; gap: .4rem; padding: 0 .9rem .6rem; }
+#chat-chips button {
+  font-family: var(--mono); font-size: .64rem; cursor: pointer;
+  background: var(--bg-raised); color: var(--text-dim);
+  border: 1px solid var(--line); border-radius: 999px; padding: .28rem .7rem;
+  transition: all .18s;
+}
+#chat-chips button:hover { color: var(--green); border-color: var(--green); }
+#chat-form { display: flex; gap: .5rem; padding: .7rem .9rem; border-top: 1px solid var(--line); background: var(--bg-raised); }
+#chat-input {
+  flex: 1; background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+  color: var(--text-bright); font-family: var(--mono); font-size: .8rem;
+  padding: .5rem .7rem; outline: none; transition: border-color .18s;
+}
+#chat-input:focus { border-color: var(--green); }
+#chat-form button[type=submit] {
+  background: var(--green-dim); color: var(--green); border: 1px solid rgba(61,220,132,.35);
+  border-radius: 8px; padding: 0 .85rem; font-family: var(--mono); font-size: .8rem;
+  cursor: pointer; transition: all .18s;
+}
+#chat-form button[type=submit]:hover { background: rgba(61,220,132,.22); }
+
 /* reveal animation */
 .reveal { opacity: 0; transform: translateY(26px); transition: opacity .65s ease, transform .65s ease; }
 .reveal.in { opacity: 1; transform: none; }
@@ -311,6 +388,17 @@ footer .dev { color: var(--green); font-weight: 600; }
 <body>
 <div id="progress"></div>
 <div class="watermark">⌁ developed by <b>Souhayl Guenichi</b></div>
+
+<button id="chat-fab" aria-label="Open course assistant">🦞</button>
+<div id="chat-panel" role="dialog" aria-label="Course assistant">
+  <div class="head"><span class="status"></span>clawbot — course assistant<button class="x" aria-label="Close">✕</button></div>
+  <div id="chat-log"></div>
+  <div id="chat-chips"></div>
+  <form id="chat-form" autocomplete="off">
+    <input id="chat-input" type="text" placeholder="ask about the course…" maxlength="200">
+    <button type="submit">↵</button>
+  </form>
+</div>
 <div class="layout">
 
 <nav class="side" id="nav">
@@ -601,6 +689,115 @@ document.querySelectorAll(".codeblock .copy").forEach(function (btn) {
     });
   });
 });
+
+// ---------- clawbot: client-side course assistant ----------
+(function () {
+  var LESSONS = [
+    { id: "openclaw", n: "00", title: "What is OpenClaw", keys: ["what", "openclaw", "gateway", "whatsapp", "telegram", "imessage", "claude code", "self-hosted", "messaging"],
+      sum: "OpenClaw is a <b>self-hosted messaging gateway</b>: one long-running process on your machine connecting WhatsApp, Telegram, Discord and iMessage to AI agents that run tools locally (files, shell, browser). You own the connections, config and execution. Unlike Claude Code, it's fully self-hosted with many more integrations." },
+    { id: "install", n: "01", title: "Install & First Run", keys: ["install", "setup", "node", "npm", "daemon", "winget", "brew", "nvm", "onboard", "windows", "mac", "linux", "wizard", "status", "doctor", "command"],
+      sum: "Needs <b>Node ≥ 22</b>. Install with <code>npm install -g openclaw@latest</code>, then <code>openclaw onboard --install-daemon</code> — installs the gateway as a background service (launchd on macOS, systemd on Linux; WSL2 recommended on Windows). Key commands: <code>status</code>, <code>health</code>, <code>doctor</code>, <code>security audit</code>." },
+    { id: "workspace", n: "02", title: "Workspace & Memory", keys: ["workspace", "memory", "config", "credentials", "session", "git", "backup", "private"],
+      sum: "Config, credentials and sessions live under <code>~/.openclaw/</code>. Treat the workspace as <b>private memory</b>: init git, push to a private remote, and <code>.gitignore</code> secrets." },
+    { id: "pinchboard", n: "03", title: "Pinchboard", keys: ["pinchboard", "moltbook", "sign up"],
+      sum: "Pinchboard = <b>Moltbook but for 𝕏</b>. Exercise: tell your agent to sign up at pinchboard.up.railway.app." },
+    { id: "assistant", n: "04", title: "Personal Assistant", keys: ["assistant", "personal", "discord", "channel", "pair"],
+      sum: "Hands-on: set up a personal assistant on <b>WhatsApp</b> and <b>Discord</b> (create an app in the Discord developer portal, then pair the channel)." },
+    { id: "skills", n: "05", title: "Skills", keys: ["skill", "skill.md", "clawhub", "token", "frontmatter", "email", "smtp", "registry", "invocable"],
+      sum: "Skills = folders with a <b>SKILL.md</b> (YAML frontmatter + instructions) teaching the agent how to use tools. Per-agent skills in <code>&lt;workspace&gt;/skills</code>; shared ones in <code>~/.openclaw/skills</code>. Cost ~24 tokens each. Install community skills from <b>ClawHub</b> (<code>clawhub install &lt;slug&gt;</code>) — but treat third-party skills as untrusted." },
+    { id: "multiagent", n: "06", title: "Multi-Agent", keys: ["multi", "agent", "routing", "isolation", "persona", "profile", "family", "work"],
+      sum: "Run several isolated agents (e.g. family vs work): each gets its own workspace, sessions, auth, sandbox and tool policy. Add one with <code>openclaw agents add work</code>. Access profiles range from full access to read-only to messaging-only." },
+    { id: "security", n: "07", title: "Security", keys: ["security", "prompt injection", "injection", "attack", "untrusted", "browser", "deny", "elevated", "risk", "safe"],
+      sum: "Main threat: <b>prompt injection</b> — crafted messages tricking the agent into running commands (smaller models more susceptible). Mitigate: enable the sandbox, restrict tools with <code>tools.deny</code> (block <code>exec</code>, <code>browser</code>…) for untrusted channels, never grant elevated mode to unknown senders, and restrict the browser tool by allowlist." },
+    { id: "sandboxing", n: "08", title: "Sandboxing", keys: ["sandbox", "docker", "container", "isolation", "scope", "workspaceaccess", "tool policy", "bookworm"],
+      sum: "Docker-based isolation for tool execution (gateway stays on host). <code>sandbox.mode</code>: off / non-main / all. <code>sandbox.scope</code>: session / agent / shared. <code>workspaceAccess</code>: none / ro / rw. Tool policy: <code>tools.allow</code> / <code>tools.deny</code> — <b>deny always wins</b>. Elevated exec bypasses it all, so guard it." }
+  ];
+  var COURSE_SUM = "This is a <b>1-hour crash course</b> in 9 lessons: what OpenClaw is (self-hosted gateway linking WhatsApp/Telegram/Discord/iMessage to AI agents), installing it, workspace &amp; memory, two hands-on exercises (Pinchboard, personal assistant), the skills system, multi-agent routing, and two lessons on staying safe: security and sandboxing.";
+
+  var fab = document.getElementById("chat-fab"), panel = document.getElementById("chat-panel"),
+      log = document.getElementById("chat-log"), chips = document.getElementById("chat-chips"),
+      form = document.getElementById("chat-form"), input = document.getElementById("chat-input");
+
+  function add(html, who) {
+    var d = document.createElement("div");
+    d.className = "msg " + who;
+    d.innerHTML = html;
+    log.appendChild(d);
+    log.scrollTop = log.scrollHeight;
+    return d;
+  }
+  function botReply(html) {
+    var t = add("<i></i><i></i><i></i>", "bot typing");
+    setTimeout(function () {
+      t.classList.remove("typing");
+      t.innerHTML = html;
+      log.scrollTop = log.scrollHeight;
+    }, 420 + Math.random() * 380);
+  }
+  function setChips(list) {
+    chips.innerHTML = "";
+    list.forEach(function (c) {
+      var b = document.createElement("button");
+      b.textContent = c;
+      b.addEventListener("click", function () { ask(c); });
+      chips.appendChild(b);
+    });
+  }
+  function lessonLink(l) { return ' <a href="#' + l.id + '">→ lesson ' + l.n + '</a>'; }
+
+  function answer(q) {
+    var s = q.toLowerCase().trim();
+    if (/^(hi|hello|hey|salut|yo)\b/.test(s)) return "Hey! I'm <b>clawbot</b> 🦞 — I know all 9 lessons. Ask me to summarize the course, a lesson, or any topic (install, skills, security…).";
+    if (/help|what can you/.test(s)) return "I can: <b>summarize the course</b>, <b>summarize a lesson</b> (\"summarize lesson 5\" or \"resume security\"), or answer topic questions (\"how do I install?\", \"what is prompt injection?\").";
+    var wantsSum = /(summar|resume|résum|recap|tl;?dr|overview|short version)/.test(s);
+    // whole course
+    if (wantsSum && /(course|everything|all|website|site)/.test(s)) return COURSE_SUM;
+    // lesson by number
+    var m = s.match(/(?:lesson|lecon|leçon|chapter|section|#)?\s*0?([0-8])(?:\b|$)/);
+    var byNum = m && /lesson|lecon|leçon|chapter|section|#|^0?[0-8]$/.test(s) ? LESSONS[+m[1]] : null;
+    if (byNum) return "<b>" + byNum.n + " · " + byNum.title + "</b><br>" + byNum.sum + lessonLink(byNum);
+    // keyword match, best score
+    var best = null, bestScore = 0;
+    LESSONS.forEach(function (l) {
+      var score = 0;
+      l.keys.forEach(function (k) { if (s.indexOf(k) !== -1) score += k.length; });
+      if (s.indexOf(l.title.toLowerCase()) !== -1) score += 20;
+      if (score > bestScore) { bestScore = score; best = l; }
+    });
+    if (best) return "<b>" + best.n + " · " + best.title + "</b><br>" + best.sum + lessonLink(best);
+    if (wantsSum) return COURSE_SUM;
+    return "Hmm, not sure about that one. I know these topics: " + LESSONS.map(function (l) { return l.title; }).join(" · ") + ". Try \"summarize lesson 7\" or \"what is sandboxing?\"";
+  }
+
+  function ask(q) {
+    add(q.replace(/</g, "&lt;"), "user");
+    botReply(answer(q));
+    input.value = "";
+    input.focus();
+  }
+
+  var opened = false;
+  function openPanel() {
+    panel.classList.add("open");
+    requestAnimationFrame(function () { panel.classList.add("shown"); });
+    fab.style.animation = "none";
+    if (!opened) {
+      opened = true;
+      botReply("Hey, I'm <b>clawbot</b> 🦞 Your guide to this course. Ask me anything — or tap a suggestion below.");
+      setChips(["summarize the course", "summarize lesson 5", "how do I install?", "what is prompt injection?"]);
+    }
+    setTimeout(function () { input.focus(); }, 250);
+  }
+  function closePanel() {
+    panel.classList.remove("shown");
+    setTimeout(function () { panel.classList.remove("open"); }, 220);
+  }
+  fab.addEventListener("click", function () { panel.classList.contains("open") ? closePanel() : openPanel(); });
+  panel.querySelector(".x").addEventListener("click", closePanel);
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closePanel(); });
+  form.addEventListener("submit", function (e) { e.preventDefault(); if (input.value.trim()) ask(input.value.trim()); });
+  if (/[?&]chat=open/.test(location.search)) openPanel();
+})();
 </script>
 </body>
 </html>
