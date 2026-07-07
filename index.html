@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OpenClaw Crash Course</title>
 <meta name="description" content="A 1-hour crash course on OpenClaw — the self-hosted messaging gateway for AI agents.">
+<meta name="author" content="Souhayl Guenichi">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦞</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -180,6 +181,26 @@ code {
 }
 .term code, .term .body { background: none; border: none; padding: 0; color: var(--text); }
 
+/* OS tabs */
+.os-tabs { display: flex; gap: .4rem; margin: 1.2rem 0 0; }
+.os-tabs button {
+  font-family: var(--mono); font-size: .74rem; cursor: pointer;
+  background: var(--bg-raised); color: var(--text-dim);
+  border: 1px solid var(--line); border-bottom: none;
+  border-radius: 8px 8px 0 0; padding: .45rem 1.1rem;
+  transition: all .18s;
+}
+.os-tabs button:hover { color: var(--text-bright); }
+.os-tabs button.active {
+  color: var(--green); background: var(--green-dim);
+  border-color: rgba(61,220,132,.35);
+}
+.os-pane { display: none; }
+.os-pane.active { display: block; animation: rise .35s ease both; }
+.os-pane .codeblock { margin-top: 0; }
+.os-pane .term { border-radius: 0 10px 10px 10px; }
+.os-note { font-size: .82rem; color: var(--text-dim); margin: .5rem 0 0; max-width: 44rem; }
+
 /* code block w/ copy */
 .codeblock { position: relative; margin: 1.2rem 0; max-width: 44rem; }
 .codeblock .copy {
@@ -240,6 +261,20 @@ footer {
   font-family: var(--mono); font-size: .76rem; color: var(--text-dim);
 }
 footer .claw { color: var(--green); }
+footer .dev { color: var(--green); font-weight: 600; }
+
+/* watermark badge */
+.watermark {
+  position: fixed; bottom: 14px; right: 16px; z-index: 60;
+  font-family: var(--mono); font-size: .66rem; letter-spacing: .06em;
+  color: var(--text-dim); background: rgba(15,21,32,.85);
+  border: 1px solid var(--line); border-radius: 999px;
+  padding: .32rem .85rem; backdrop-filter: blur(8px);
+  user-select: none; pointer-events: none;
+  transition: opacity .3s;
+}
+.watermark b { color: var(--green); font-weight: 600; }
+@media (max-width: 860px) { .watermark { font-size: .6rem; padding: .25rem .7rem; } }
 
 /* reveal animation */
 .reveal { opacity: 0; transform: translateY(26px); transition: opacity .65s ease, transform .65s ease; }
@@ -275,6 +310,7 @@ footer .claw { color: var(--green); }
 </head>
 <body>
 <div id="progress"></div>
+<div class="watermark">⌁ developed by <b>Souhayl Guenichi</b></div>
 <div class="layout">
 
 <nav class="side" id="nav">
@@ -322,10 +358,38 @@ footer .claw { color: var(--green); }
 <section id="install" class="reveal">
   <div class="sec-head"><span class="idx">01</span><h2>Install &amp; First Run</h2></div>
   <div class="callout"><span class="tag">Prerequisite</span>Node ≥ 22 — check with <code>node -v</code></div>
-  <div class="codeblock">
-    <button class="copy">copy</button>
-    <div class="term"><div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="title">install</span></div>
-    <div class="body"><span class="p">$ </span>npm install -g openclaw@latest<br><span class="p">$ </span>openclaw onboard --install-daemon</div></div>
+
+  <div class="os-tabs" role="tablist">
+    <button class="active" data-os="win" role="tab">🪟 Windows</button>
+    <button data-os="mac" role="tab">🍎 macOS</button>
+    <button data-os="linux" role="tab">🐧 Linux</button>
+  </div>
+
+  <div class="os-pane active" data-os="win">
+    <div class="codeblock">
+      <button class="copy">copy</button>
+      <div class="term"><div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="title">PowerShell</span></div>
+      <div class="body"><span class="c"># install Node 22 LTS (skip if node -v ≥ 22)</span><br><span class="p">&gt; </span>winget install OpenJS.NodeJS.LTS<br><span class="c"># install OpenClaw + run onboarding</span><br><span class="p">&gt; </span>npm install -g openclaw@latest<br><span class="p">&gt; </span>openclaw onboard --install-daemon</div></div>
+    </div>
+    <p class="os-note">Tip: for the smoothest experience on Windows, run everything inside <b>WSL2</b> (Ubuntu) and follow the Linux tab — the daemon then runs under systemd.</p>
+  </div>
+
+  <div class="os-pane" data-os="mac">
+    <div class="codeblock">
+      <button class="copy">copy</button>
+      <div class="term"><div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="title">zsh</span></div>
+      <div class="body"><span class="c"># install Node 22 (skip if node -v ≥ 22)</span><br><span class="p">$ </span>brew install node@22<br><span class="c"># install OpenClaw + run onboarding</span><br><span class="p">$ </span>npm install -g openclaw@latest<br><span class="p">$ </span>openclaw onboard --install-daemon</div></div>
+    </div>
+    <p class="os-note">The daemon is installed as a <b>launchd</b> service — starts on boot, no terminal needed.</p>
+  </div>
+
+  <div class="os-pane" data-os="linux">
+    <div class="codeblock">
+      <button class="copy">copy</button>
+      <div class="term"><div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="title">bash</span></div>
+      <div class="body"><span class="c"># install Node 22 via nvm (skip if node -v ≥ 22)</span><br><span class="p">$ </span>curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash<br><span class="p">$ </span>nvm install 22<br><span class="c"># install OpenClaw + run onboarding</span><br><span class="p">$ </span>npm install -g openclaw@latest<br><span class="p">$ </span>openclaw onboard --install-daemon</div></div>
+    </div>
+    <p class="os-note">The daemon is installed as a <b>systemd</b> service — starts on boot, no terminal needed.</p>
   </div>
   <p>The <code>--install-daemon</code> flag installs the gateway as a background service (launchd on macOS, systemd on Linux) — it starts on boot and keeps running, no terminal needed. The onboarding wizard walks you through config path, workspace location, and channel pairing.</p>
   <h3>Useful commands</h3>
@@ -465,7 +529,7 @@ footer .claw { color: var(--green); }
 </section>
 
 <footer>
-  <span class="claw">🦞</span> openclaw crash course · adapted from <a href="https://github.com/kiankyars/openclawcourse" target="_blank" rel="noopener">kiankyars/openclawcourse</a> · <a href="https://docs.openclaw.ai" target="_blank" rel="noopener">docs.openclaw.ai</a>
+  <span class="claw">🦞</span> openclaw crash course · developed by <span class="dev">Souhayl Guenichi</span> · adapted from <a href="https://github.com/kiankyars/openclawcourse" target="_blank" rel="noopener">kiankyars/openclawcourse</a> · <a href="https://docs.openclaw.ai" target="_blank" rel="noopener">docs.openclaw.ai</a>
 </footer>
 
 </main>
@@ -513,12 +577,23 @@ function onScroll() {
 window.addEventListener("scroll", onScroll, { passive: true });
 onScroll();
 
+// OS tabs
+document.querySelectorAll(".os-tabs button").forEach(function (tab) {
+  tab.addEventListener("click", function () {
+    var os = tab.getAttribute("data-os");
+    document.querySelectorAll(".os-tabs button").forEach(function (t) { t.classList.toggle("active", t === tab); });
+    document.querySelectorAll(".os-pane").forEach(function (p) { p.classList.toggle("active", p.getAttribute("data-os") === os); });
+  });
+});
+
 // copy buttons
 document.querySelectorAll(".codeblock .copy").forEach(function (btn) {
   btn.addEventListener("click", function () {
     var lines = [];
     btn.parentElement.querySelectorAll(".body").forEach(function (b) {
-      lines = b.innerText.split("\n").map(function (l) { return l.replace(/^[$>]\s*/, ""); }).filter(Boolean);
+      lines = b.innerText.split("\n")
+        .filter(function (l) { return l.trim() && l.trim().charAt(0) !== "#"; })
+        .map(function (l) { return l.replace(/^[$>]\s*/, ""); });
     });
     navigator.clipboard.writeText(lines.join("\n")).then(function () {
       btn.textContent = "copied!"; btn.classList.add("done");
