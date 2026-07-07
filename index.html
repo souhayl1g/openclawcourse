@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenClaw Crash Course</title>
+<meta name="description" content="A 1-hour crash course on OpenClaw — the self-hosted messaging gateway for AI agents.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦞</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-raised: #0f1520;
+  --bg-card: #101724;
+  --line: #1c2636;
+  --line-bright: #2a3a52;
+  --text: #c9d5e3;
+  --text-dim: #7d8ea3;
+  --text-bright: #eef4fb;
+  --green: #3ddc84;
+  --green-dim: rgba(61, 220, 132, .12);
+  --cyan: #4dd0e1;
+  --amber: #ffb74d;
+  --red: #ff5f56;
+  --yellow: #ffbd2e;
+  --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sans: 'IBM Plex Sans', system-ui, sans-serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 4.5rem; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 16.5px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+::selection { background: var(--green); color: #05270f; }
+
+/* ambient background */
+body::before {
+  content: "";
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 45% at 15% -5%, rgba(61,220,132,.07), transparent),
+    radial-gradient(ellipse 50% 40% at 90% 10%, rgba(77,208,225,.05), transparent);
+  pointer-events: none; z-index: 0;
+}
+body::after {
+  content: "";
+  position: fixed; inset: 0;
+  background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 42px 42px;
+  opacity: .14;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 0%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 0%, transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+
+/* progress bar */
+#progress {
+  position: fixed; top: 0; left: 0; height: 2px; width: 0%;
+  background: linear-gradient(90deg, var(--green), var(--cyan));
+  box-shadow: 0 0 12px rgba(61,220,132,.7);
+  z-index: 100; transition: width .1s linear;
+}
+
+a { color: var(--cyan); text-decoration: none; border-bottom: 1px solid rgba(77,208,225,.3); transition: border-color .2s, color .2s; }
+a:hover { color: var(--text-bright); border-color: var(--cyan); }
+
+.layout { display: flex; max-width: 1200px; margin: 0 auto; position: relative; z-index: 1; }
+
+/* ---------- sidebar ---------- */
+nav.side {
+  position: sticky; top: 0; height: 100vh; width: 250px; flex-shrink: 0;
+  padding: 2.2rem 1.4rem 2rem 1.6rem;
+  border-right: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: .1rem;
+  overflow-y: auto;
+}
+nav.side .brand {
+  font-family: var(--mono); font-weight: 700; font-size: 1rem;
+  color: var(--text-bright); margin-bottom: 1.6rem; letter-spacing: .02em;
+}
+nav.side .brand .claw { color: var(--green); }
+nav.side .brand .blink { animation: blink 1.1s steps(1) infinite; color: var(--green); }
+nav.side a.item {
+  display: flex; align-items: baseline; gap: .6rem;
+  font-family: var(--mono); font-size: .8rem;
+  color: var(--text-dim); border: none;
+  padding: .42rem .6rem; border-radius: 6px; border-left: 2px solid transparent;
+  transition: all .18s;
+}
+nav.side a.item .num { color: var(--line-bright); font-size: .7rem; transition: color .18s; }
+nav.side a.item:hover { color: var(--text-bright); background: var(--bg-raised); }
+nav.side a.item.active {
+  color: var(--green); background: var(--green-dim);
+  border-left-color: var(--green); border-radius: 0 6px 6px 0;
+}
+nav.side a.item.active .num { color: var(--green); }
+nav.side .foot { margin-top: auto; padding-top: 1.5rem; font-family: var(--mono); font-size: .68rem; color: var(--text-dim); }
+
+/* ---------- main ---------- */
+main { flex: 1; min-width: 0; padding: 0 3rem 5rem; }
+
+/* hero */
+header.hero { padding: 5rem 0 4rem; }
+.hero .kicker {
+  font-family: var(--mono); font-size: .75rem; letter-spacing: .25em;
+  text-transform: uppercase; color: var(--green); margin-bottom: 1.2rem;
+  animation: rise .7s ease both;
+}
+.hero h1 {
+  font-family: var(--mono); font-weight: 700;
+  font-size: clamp(2.1rem, 5vw, 3.4rem); line-height: 1.12;
+  color: var(--text-bright); letter-spacing: -.02em;
+  animation: rise .7s .1s ease both;
+}
+.hero h1 .accent { color: var(--green); text-shadow: 0 0 26px rgba(61,220,132,.45); }
+.hero p.sub {
+  max-width: 34rem; margin-top: 1.2rem; color: var(--text-dim); font-size: 1.05rem;
+  animation: rise .7s .2s ease both;
+}
+.hero .term { margin-top: 2.4rem; animation: rise .7s .32s ease both; max-width: 34rem; }
+.hero .meta {
+  display: flex; gap: 1.8rem; margin-top: 2rem; flex-wrap: wrap;
+  font-family: var(--mono); font-size: .74rem; color: var(--text-dim);
+  animation: rise .7s .45s ease both;
+}
+.hero .meta b { color: var(--text-bright); font-weight: 600; }
+
+/* terminal window */
+.term {
+  background: #0c111b; border: 1px solid var(--line); border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 18px 50px -18px rgba(0,0,0,.75), 0 0 0 1px rgba(61,220,132,.05);
+}
+.term .bar {
+  display: flex; align-items: center; gap: .45rem;
+  padding: .6rem .9rem; background: var(--bg-raised); border-bottom: 1px solid var(--line);
+}
+.term .dot { width: 11px; height: 11px; border-radius: 50%; }
+.term .dot.r { background: var(--red); } .term .dot.y { background: var(--yellow); } .term .dot.g { background: #27c93f; }
+.term .bar .title { font-family: var(--mono); font-size: .68rem; color: var(--text-dim); margin-left: .5rem; }
+.term .body { padding: 1rem 1.1rem; font-family: var(--mono); font-size: .85rem; line-height: 1.9; overflow-x: auto; }
+.term .body .p { color: var(--green); user-select: none; }
+.term .body .c { color: var(--text-dim); }
+.typed::after { content: "▋"; color: var(--green); animation: blink 1.1s steps(1) infinite; }
+
+/* sections */
+section { padding: 3.2rem 0 1rem; border-top: 1px solid var(--line); }
+section:first-of-type { border-top: none; }
+.sec-head { display: flex; align-items: baseline; gap: 1rem; margin-bottom: 1.4rem; }
+.sec-head .idx {
+  font-family: var(--mono); font-size: .78rem; font-weight: 600;
+  color: var(--green); background: var(--green-dim);
+  border: 1px solid rgba(61,220,132,.25); border-radius: 6px;
+  padding: .15rem .55rem; flex-shrink: 0;
+}
+section h2 {
+  font-family: var(--mono); font-size: clamp(1.3rem, 2.6vw, 1.7rem);
+  color: var(--text-bright); font-weight: 600; letter-spacing: -.01em;
+}
+section h3 {
+  font-family: var(--mono); font-size: 1.02rem; color: var(--cyan);
+  margin: 1.9rem 0 .7rem; font-weight: 600;
+}
+section h3::before { content: "## "; color: var(--line-bright); }
+section p { margin: .8rem 0; max-width: 44rem; }
+section ul { margin: .8rem 0 .8rem 1.2rem; max-width: 44rem; }
+section li { margin: .45rem 0; }
+section li::marker { color: var(--green); }
+code {
+  font-family: var(--mono); font-size: .84em;
+  background: var(--bg-raised); border: 1px solid var(--line);
+  border-radius: 4px; padding: .1em .4em; color: var(--amber);
+}
+.term code, .term .body { background: none; border: none; padding: 0; color: var(--text); }
+
+/* code block w/ copy */
+.codeblock { position: relative; margin: 1.2rem 0; max-width: 44rem; }
+.codeblock .copy {
+  position: absolute; top: .5rem; right: .6rem;
+  font-family: var(--mono); font-size: .65rem;
+  background: var(--bg-raised); color: var(--text-dim);
+  border: 1px solid var(--line); border-radius: 5px;
+  padding: .25rem .6rem; cursor: pointer; transition: all .18s;
+}
+.codeblock .copy:hover { color: var(--green); border-color: var(--green); }
+.codeblock .copy.done { color: var(--green); border-color: var(--green); }
+
+/* cards */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: .9rem; margin: 1.3rem 0; }
+.card {
+  background: var(--bg-card); border: 1px solid var(--line); border-radius: 10px;
+  padding: 1.1rem 1.2rem; transition: transform .22s, border-color .22s, box-shadow .22s;
+}
+.card:hover {
+  transform: translateY(-3px); border-color: rgba(61,220,132,.4);
+  box-shadow: 0 12px 30px -12px rgba(0,0,0,.6), 0 0 0 1px rgba(61,220,132,.12);
+}
+.card .cmd { font-family: var(--mono); font-size: .8rem; color: var(--green); font-weight: 600; display: block; margin-bottom: .35rem; word-break: break-word; }
+.card .desc { font-size: .84rem; color: var(--text-dim); line-height: 1.55; }
+.card .desc b, .card .desc code { color: var(--text); }
+
+/* callout */
+.callout {
+  border: 1px solid var(--line); border-left: 3px solid var(--green);
+  background: var(--bg-card); border-radius: 0 10px 10px 0;
+  padding: .95rem 1.2rem; margin: 1.2rem 0; max-width: 44rem; font-size: .92rem;
+}
+.callout.warn { border-left-color: var(--amber); }
+.callout.warn .tag { color: var(--amber); }
+.callout .tag { font-family: var(--mono); font-size: .68rem; letter-spacing: .18em; text-transform: uppercase; color: var(--green); display: block; margin-bottom: .3rem; }
+
+/* doc links */
+.doclinks { display: flex; flex-wrap: wrap; gap: .55rem; margin: 1.1rem 0; }
+.doclinks a {
+  font-family: var(--mono); font-size: .72rem; color: var(--text-dim);
+  border: 1px solid var(--line); border-radius: 999px; padding: .3rem .85rem;
+  transition: all .18s;
+}
+.doclinks a::before { content: "→ "; color: var(--green); }
+.doclinks a:hover { color: var(--text-bright); border-color: var(--green); background: var(--green-dim); }
+
+/* image */
+figure { margin: 1.4rem 0; max-width: 44rem; }
+figure img {
+  width: 100%; border-radius: 10px; border: 1px solid var(--line); display: block;
+  box-shadow: 0 18px 50px -18px rgba(0,0,0,.75);
+}
+figcaption { font-family: var(--mono); font-size: .7rem; color: var(--text-dim); margin-top: .55rem; }
+
+/* footer */
+footer {
+  border-top: 1px solid var(--line); margin-top: 3rem; padding: 2.5rem 0 1rem;
+  font-family: var(--mono); font-size: .76rem; color: var(--text-dim);
+}
+footer .claw { color: var(--green); }
+
+/* reveal animation */
+.reveal { opacity: 0; transform: translateY(26px); transition: opacity .65s ease, transform .65s ease; }
+.reveal.in { opacity: 1; transform: none; }
+
+@keyframes rise { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ---------- mobile ---------- */
+@media (max-width: 860px) {
+  .layout { flex-direction: column; }
+  nav.side {
+    position: sticky; top: 0; height: auto; width: 100%;
+    flex-direction: row; align-items: center; gap: .3rem;
+    padding: .6rem .9rem; overflow-x: auto; overflow-y: hidden;
+    background: rgba(10,14,20,.92); backdrop-filter: blur(10px);
+    border-right: none; border-bottom: 1px solid var(--line); z-index: 50;
+  }
+  nav.side .brand { margin: 0 .8rem 0 0; font-size: .85rem; white-space: nowrap; }
+  nav.side a.item { white-space: nowrap; border-left: none; padding: .3rem .55rem; }
+  nav.side a.item.active { border-radius: 6px; }
+  nav.side .foot { display: none; }
+  main { padding: 0 1.3rem 4rem; }
+  header.hero { padding: 3rem 0 2.5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .hero .kicker, .hero h1, .hero p.sub, .hero .term, .hero .meta { animation: none; }
+  .typed::after, nav.side .brand .blink { animation: none; }
+}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="layout">
+
+<nav class="side" id="nav">
+  <div class="brand"><span class="claw">🦞 openclaw</span>/course<span class="blink">▋</span></div>
+  <a class="item" href="#openclaw"><span class="num">00</span>What is OpenClaw</a>
+  <a class="item" href="#install"><span class="num">01</span>Install &amp; First Run</a>
+  <a class="item" href="#workspace"><span class="num">02</span>Workspace &amp; Memory</a>
+  <a class="item" href="#pinchboard"><span class="num">03</span>Pinchboard</a>
+  <a class="item" href="#assistant"><span class="num">04</span>Personal Assistant</a>
+  <a class="item" href="#skills"><span class="num">05</span>Skills</a>
+  <a class="item" href="#multiagent"><span class="num">06</span>Multi-Agent</a>
+  <a class="item" href="#security"><span class="num">07</span>Security</a>
+  <a class="item" href="#sandboxing"><span class="num">08</span>Sandboxing</a>
+  <div class="foot">1-hour crash course<br>docs.openclaw.ai</div>
+</nav>
+
+<main>
+
+<header class="hero">
+  <div class="kicker">// 1-hour crash course</div>
+  <h1>Your AI agent,<br>on <span class="accent">every channel</span>.</h1>
+  <p class="sub">OpenClaw is a self-hosted gateway that connects WhatsApp, Telegram, Discord and iMessage to AI coding agents — running on your machine, under your rules.</p>
+  <div class="term">
+    <div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="title">~/openclaw — zsh</span></div>
+    <div class="body"><span class="p">$ </span><span id="typewriter" class="typed"></span></div>
+  </div>
+  <div class="meta">
+    <span><b>9</b> lessons</span>
+    <span><b>~60</b> min</span>
+    <span><b>0</b> cloud dependencies</span>
+  </div>
+</header>
+
+<section id="openclaw" class="reveal">
+  <div class="sec-head"><span class="idx">00</span><h2>What is OpenClaw?</h2></div>
+  <p>OpenClaw is a <b>self-hosted messaging gateway</b> that connects WhatsApp, Telegram, Discord, and iMessage to AI coding agents.</p>
+  <ul>
+    <li>The gateway is a single long-running process on your machine that maintains persistent connections to messaging platforms.</li>
+    <li>When a message arrives on any channel, the gateway routes it to an agent that can execute tools locally — file operations, shell commands, browser automation — letting you self-host the entire stack: you own the connections, the config, and the execution environment.</li>
+  </ul>
+  <h3>How is it different from Claude Code?</h3>
+  <p>OpenClaw is fully self-hosted on your machine, with many more supported integrations.</p>
+</section>
+
+<section id="install" class="reveal">
+  <div class="sec-head"><span class="idx">01</span><h2>Install &amp; First Run</h2></div>
+  <div class="callout"><span class="tag">Prerequisite</span>Node ≥ 22 — check with <code>node -v</code></div>
+  <div class="codeblock">
+    <button class="copy">copy</button>
+    <div class="term"><div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="title">install</span></div>
+    <div class="body"><span class="p">$ </span>npm install -g openclaw@latest<br><span class="p">$ </span>openclaw onboard --install-daemon</div></div>
+  </div>
+  <p>The <code>--install-daemon</code> flag installs the gateway as a background service (launchd on macOS, systemd on Linux) — it starts on boot and keeps running, no terminal needed. The onboarding wizard walks you through config path, workspace location, and channel pairing.</p>
+  <h3>Useful commands</h3>
+  <div class="cards">
+    <div class="card"><span class="cmd">openclaw status</span><span class="desc">Show channel health and recent sessions</span></div>
+    <div class="card"><span class="cmd">openclaw health</span><span class="desc">Fetch health from the running gateway</span></div>
+    <div class="card"><span class="cmd">openclaw security audit --deep</span><span class="desc">Audit config with live gateway probe</span></div>
+    <div class="card"><span class="cmd">openclaw security audit --fix</span><span class="desc">Apply safe fixes to tighten security</span></div>
+    <div class="card"><span class="cmd">openclaw doctor</span><span class="desc">Health checks and quick fixes for the gateway</span></div>
+  </div>
+  <h3>TUI interface</h3>
+  <p>The built-in terminal UI ships with many helpful commands.</p>
+  <div class="doclinks">
+    <a href="https://docs.openclaw.ai/install" target="_blank" rel="noopener">Install</a>
+    <a href="https://docs.openclaw.ai/start/wizard" target="_blank" rel="noopener">Onboarding Wizard</a>
+  </div>
+</section>
+
+<section id="workspace" class="reveal">
+  <div class="sec-head"><span class="idx">02</span><h2>Workspace &amp; Memory</h2></div>
+  <ul>
+    <li>Config, credentials and sessions live under <code>~/.openclaw/</code>.</li>
+  </ul>
+  <h3>Git backup</h3>
+  <div class="callout warn"><span class="tag">Keep it private</span>Treat the workspace as <b>private</b> memory: init git, add a private remote, and <code>.gitignore</code> your secrets.</div>
+  <div class="doclinks">
+    <a href="https://docs.openclaw.ai/concepts/agent-workspace" target="_blank" rel="noopener">Agent Workspace</a>
+    <a href="https://docs.openclaw.ai/concepts/agent-workspace#git-backup-recommended-private" target="_blank" rel="noopener">Git backup</a>
+  </div>
+</section>
+
+<section id="pinchboard" class="reveal">
+  <div class="sec-head"><span class="idx">03</span><h2>Pinchboard</h2></div>
+  <p><b>Moltbook, but for 𝕏!</b></p>
+  <p>Just tell your agent to sign up <a href="https://pinchboard.up.railway.app" target="_blank" rel="noopener">here</a>.</p>
+</section>
+
+<section id="assistant" class="reveal">
+  <div class="sec-head"><span class="idx">04</span><h2>Personal Assistant</h2></div>
+  <p>Let's set up a personal <a href="https://docs.openclaw.ai/start/openclaw" target="_blank" rel="noopener">assistant</a>!</p>
+  <ul>
+    <li>WhatsApp</li>
+    <li><a href="https://discord.com/developers/applications" target="_blank" rel="noopener">Discord</a></li>
+  </ul>
+</section>
+
+<section id="skills" class="reveal">
+  <div class="sec-head"><span class="idx">05</span><h2>Skills System</h2></div>
+  <h3>What skills are</h3>
+  <ul>
+    <li>AgentSkills-compatible folders: each skill is a directory with <b>SKILL.md</b> (YAML frontmatter + instructions). They teach the agent how to use tools.</li>
+    <li>Per-agent skills live in <code>&lt;workspace&gt;/skills</code> — for that agent only.</li>
+    <li>Shared skills live in <code>~/.openclaw/skills</code> (managed/local) — visible to all agents on the machine.</li>
+    <li>Set <code>user-invocable: true</code> to invoke skills manually.</li>
+  </ul>
+  <h3>Token impact</h3>
+  <ul>
+    <li>Base overhead when ≥ 1 skill; per-skill cost (~97 chars + name/description/location). Roughly <b>~24 tokens per skill</b>.</li>
+  </ul>
+  <h3>ClawHub</h3>
+  <ul>
+    <li>Public skills registry: <a href="https://clawhub.com" target="_blank" rel="noopener">clawhub.com</a>. Install: <code>clawhub install &lt;slug&gt;</code>; update: <code>clawhub update --all</code>.</li>
+  </ul>
+  <div class="callout warn"><span class="tag">Security</span>Treat third-party skills as <b>untrusted</b> — read them before enabling.</div>
+  <h3>Exercise: write an email skill</h3>
+  <ul>
+    <li><code>SMTP_EMAIL</code></li>
+    <li><a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener"><code>SMTP_PASSWORD</code></a> (Google app password)</li>
+  </ul>
+  <div class="doclinks">
+    <a href="https://docs.openclaw.ai/tools/skills" target="_blank" rel="noopener">Skills</a>
+    <a href="https://docs.openclaw.ai/tools/skills#token-impact-skills-list" target="_blank" rel="noopener">Token impact</a>
+    <a href="https://docs.openclaw.ai/tools/skills#security-notes" target="_blank" rel="noopener">Security notes</a>
+    <a href="https://docs.openclaw.ai/tools/clawhub" target="_blank" rel="noopener">ClawHub</a>
+  </div>
+</section>
+
+<section id="multiagent" class="reveal">
+  <div class="sec-head"><span class="idx">06</span><h2>Multi-Agent Routing</h2></div>
+  <h3>Why multi-agent</h3>
+  <ul>
+    <li><b>Isolation:</b> different personas, permissions, workspaces (e.g. family vs work).</li>
+    <li><b>Per-agent:</b> workspace, sessions, auth profiles, sandbox, tool policy.</li>
+  </ul>
+  <h3>Example</h3>
+  <div class="codeblock">
+    <button class="copy">copy</button>
+    <div class="term"><div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="title">multi-agent</span></div>
+    <div class="body"><span class="p">$ </span>openclaw agents add work<br><span class="p">&gt; </span>/agents</div></div>
+  </div>
+  <h3>Per-agent access profiles</h3>
+  <div class="cards">
+    <div class="card"><span class="cmd">full access</span><span class="desc">Sandbox off — agent runs directly on the host</span></div>
+    <div class="card"><span class="cmd">read-only</span><span class="desc">Read-only tools + workspace</span></div>
+    <div class="card"><span class="cmd">messaging-only</span><span class="desc">No filesystem access at all</span></div>
+  </div>
+  <div class="doclinks">
+    <a href="https://docs.openclaw.ai/concepts/multi-agent" target="_blank" rel="noopener">Multi-Agent Routing</a>
+    <a href="https://docs.openclaw.ai/gateway/configuration#per-agent-access-profiles-multi-agent" target="_blank" rel="noopener">Access profiles</a>
+  </div>
+</section>
+
+<section id="security" class="reveal">
+  <div class="sec-head"><span class="idx">07</span><h2>Security</h2></div>
+  <div class="callout warn"><span class="tag">Prompt injection</span>Malicious users can craft messages that trick the agent into running unintended commands. Smaller models are more susceptible. Mitigate by enabling sandbox mode and restricting tool access for channels that accept messages from untrusted or unknown senders.</div>
+  <ul>
+    <li><b>Sandbox:</b> Docker-based isolation runs tool execution in a container, protecting your host. Set <code>sandbox.mode</code> to <code>non-main</code> (sandbox everyone except your main session) or <code>all</code>. Use <code>sandbox.scope</code> for container lifecycle (<code>session</code>, <code>agent</code>, <code>shared</code>) and <code>workspaceAccess</code> to limit file access (<code>none</code>, <code>ro</code>, <code>rw</code>).</li>
+    <li><b>Tool policy:</b> Use <code>tools.deny</code> to block dangerous tools (like <code>exec</code>, <code>process</code>, <code>browser</code>) for agents handling untrusted input. Elevated mode bypasses the sandbox and runs on the host — <b>never grant it to unknown senders</b>.</li>
+    <li><b>Browser control:</b> the browser tool can navigate to any URL and interact with pages — high-risk for automation attacks. Restrict browser access by channel or sender allowlist; prefer the sandboxed browser.</li>
+  </ul>
+  <figure>
+    <img src="list.png" alt="OpenClaw security checklist" loading="lazy">
+    <figcaption>// security checklist</figcaption>
+  </figure>
+</section>
+
+<section id="sandboxing" class="reveal">
+  <div class="sec-head"><span class="idx">08</span><h2>Sandboxing</h2></div>
+  <p>Optional Docker-based isolation for tool execution — the gateway itself stays on the host.</p>
+  <div class="cards">
+    <div class="card"><span class="cmd">sandbox.mode</span><span class="desc"><code>off</code> · <code>non-main</code> · <code>all</code></span></div>
+    <div class="card"><span class="cmd">sandbox.scope</span><span class="desc"><code>session</code> · <code>agent</code> · <code>shared</code> (containers)</span></div>
+    <div class="card"><span class="cmd">workspaceAccess</span><span class="desc"><code>none</code> · <code>ro</code> · <code>rw</code></span></div>
+  </div>
+  <ul>
+    <li>Default image: <code>openclaw-sandbox:bookworm-slim</code>; build with <code>scripts/sandbox-setup.sh</code>.</li>
+  </ul>
+  <h3>Tool policy</h3>
+  <ul>
+    <li><code>tools.allow</code> / <code>tools.deny</code>; per-agent <code>agents.list[].tools</code>; sandbox tool policy (<code>tools.sandbox.tools</code>). <b>Deny wins.</b></li>
+    <li>Elevated exec runs on the host and bypasses the sandbox.</li>
+  </ul>
+  <div class="doclinks">
+    <a href="https://docs.openclaw.ai/gateway/sandboxing" target="_blank" rel="noopener">Sandboxing</a>
+    <a href="https://docs.openclaw.ai/gateway/sandbox-vs-tool-policy-vs-elevated" target="_blank" rel="noopener">Sandbox vs Tool Policy vs Elevated</a>
+  </div>
+</section>
+
+<footer>
+  <span class="claw">🦞</span> openclaw crash course · adapted from <a href="https://github.com/kiankyars/openclawcourse" target="_blank" rel="noopener">kiankyars/openclawcourse</a> · <a href="https://docs.openclaw.ai" target="_blank" rel="noopener">docs.openclaw.ai</a>
+</footer>
+
+</main>
+</div>
+
+<script>
+// typing animation in hero
+(function () {
+  var cmds = ["npm install -g openclaw@latest", "openclaw onboard --install-daemon", "openclaw status"];
+  var el = document.getElementById("typewriter");
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { el.textContent = cmds[0]; return; }
+  var ci = 0, pos = 0, deleting = false;
+  (function tick() {
+    var cmd = cmds[ci];
+    el.textContent = cmd.slice(0, pos);
+    var delay = deleting ? 18 : 55;
+    if (!deleting && pos === cmd.length) { delay = 2200; deleting = true; }
+    else if (deleting && pos === 0) { deleting = false; ci = (ci + 1) % cmds.length; delay = 400; }
+    else pos += deleting ? -1 : 1;
+    setTimeout(tick, delay);
+  })();
+})();
+
+// scroll reveal — reveal instantly on deep links or when IO unavailable
+if (location.hash || !("IntersectionObserver" in window)) {
+  document.querySelectorAll(".reveal").forEach(function (el) { el.classList.add("in"); });
+} else {
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
+  }, { threshold: 0.08, rootMargin: "0px 0px -5% 0px" });
+  document.querySelectorAll(".reveal").forEach(function (el) { io.observe(el); });
+}
+
+// scrollspy + progress bar
+var links = Array.prototype.slice.call(document.querySelectorAll("nav.side a.item"));
+var sections = links.map(function (l) { return document.querySelector(l.getAttribute("href")); });
+function onScroll() {
+  var h = document.documentElement;
+  var pct = h.scrollTop / (h.scrollHeight - h.clientHeight) * 100;
+  document.getElementById("progress").style.width = pct + "%";
+  var cur = 0;
+  sections.forEach(function (s, i) { if (s.getBoundingClientRect().top < window.innerHeight * 0.35) cur = i; });
+  links.forEach(function (l, i) { l.classList.toggle("active", i === cur); });
+}
+window.addEventListener("scroll", onScroll, { passive: true });
+onScroll();
+
+// copy buttons
+document.querySelectorAll(".codeblock .copy").forEach(function (btn) {
+  btn.addEventListener("click", function () {
+    var lines = [];
+    btn.parentElement.querySelectorAll(".body").forEach(function (b) {
+      lines = b.innerText.split("\n").map(function (l) { return l.replace(/^[$>]\s*/, ""); }).filter(Boolean);
+    });
+    navigator.clipboard.writeText(lines.join("\n")).then(function () {
+      btn.textContent = "copied!"; btn.classList.add("done");
+      setTimeout(function () { btn.textContent = "copy"; btn.classList.remove("done"); }, 1600);
+    });
+  });
+});
+</script>
+</body>
+</html>
